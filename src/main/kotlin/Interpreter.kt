@@ -7,6 +7,10 @@ class Interpreter {
         variables[name] = value
     }
 
+    fun getVar(name: String): Int {
+        return variables[name]!!
+    }
+
     fun listVar(): String {
         var result = ""
         for (variable in variables) {

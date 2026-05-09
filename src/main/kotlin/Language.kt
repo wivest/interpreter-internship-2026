@@ -25,6 +25,7 @@ class Language : Grammar<Tuple2<String, Expr>>() {
 
     val num by digits use { text.toInt() }
     val term: Parser<Expr> by num use { Expr.Value(this) } or
+            (identifier use { Expr.Var(text) }) or
             (skip(minus) and parser(::term) map { Expr.Neg(it) }) or
             (skip(lpar) and parser(::plusExpr) and skip(rpar))
     val mulExpr by leftAssociative(term, mul or div use { type }) { acc, op, t ->
