@@ -11,7 +11,7 @@ fun main() {
         if (input.isEmpty()) break
 
         val stmt = Language().parseToEnd(input)
-        interpreter.assignVar(stmt.t1, stmt.t2.evaluate(interpreter))
+        stmt.execute(interpreter)
     }
 
     println(interpreter.listVar())

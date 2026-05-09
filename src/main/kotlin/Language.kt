@@ -6,9 +6,8 @@ import com.github.h0tk3y.betterParse.grammar.parser
 import com.github.h0tk3y.betterParse.lexer.literalToken
 import com.github.h0tk3y.betterParse.lexer.regexToken
 import com.github.h0tk3y.betterParse.parser.Parser
-import com.github.h0tk3y.betterParse.utils.Tuple2
 
-class Language : Grammar<Tuple2<String, Expr>>() {
+class Language : Grammar<Statement>() {
     val ws by regexToken("\\s+", ignore = true)
 
     val mul by literalToken("*")
@@ -17,6 +16,18 @@ class Language : Grammar<Tuple2<String, Expr>>() {
     val minus by literalToken("-")
     val lpar by literalToken("(")
     val rpar by literalToken(")")
+    val comma by literalToken(",")
+
+    val trueToken by literalToken("true")
+    val falseToken by literalToken("false")
+    val less by literalToken("<")
+    val greater by literalToken(">")
+    val lessEq by literalToken("<=")
+    val greaterEq by literalToken(">=")
+
+    val ifToken by literalToken("if")
+    val thenToken by literalToken("then")
+    val elseToken by literalToken("else")
 
     val digits by regexToken("\\d+")
 
@@ -34,8 +45,22 @@ class Language : Grammar<Tuple2<String, Expr>>() {
     val plusExpr by leftAssociative(mulExpr, plus or minus use { type }) { acc, op, t ->
         if (op == plus) Expr.Add(acc, t) else Expr.Min(acc, t)
     }
+    val expr by plusExpr
 
-    val assignment by identifier use { text } and skip(assign) and plusExpr
+    val assignment by identifier use { text } and skip(assign) and expr map { Statement.Assignment(it.t1, it.t2) }
 
-    override val rootParser: Parser<Tuple2<String, Expr>> by assignment
+    val cond by trueToken use { Cond.Value(true) } or
+            (falseToken use { Cond.Value(false) }) or
+            (expr and skip(less) and expr map { Cond.Less(it.t1, it.t2) }) or
+            (expr and skip(greater) and expr map { Cond.Greater(it.t1, it.t2) }) or
+            (expr and skip(lessEq) and expr map { Cond.LessEq(it.t1, it.t2) }) or
+            (expr and skip(greaterEq) and expr map { Cond.GreaterEq(it.t1, it.t2) })
+
+    val ifStatement by skip(ifToken) and cond and skip(thenToken) and
+            separatedTerms(parser(::rootParser), comma) and skip(elseToken) and
+            separatedTerms(parser(::rootParser), comma) map {
+        Statement.If(it.t1, it.t2, it.t3)
+    }
+
+    override val rootParser: Parser<Statement> by assignment or ifStatement
 }
