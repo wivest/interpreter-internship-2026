@@ -29,6 +29,9 @@ class Language : Grammar<Statement>() {
     val thenToken by literalToken("then")
     val elseToken by literalToken("else")
 
+    val whileToken by literalToken("while")
+    val doToken by literalToken("do")
+
     val digits by regexToken("\\d+")
 
     val identifier by regexToken("\\w+")
@@ -62,5 +65,10 @@ class Language : Grammar<Statement>() {
         Statement.If(it.t1, it.t2, it.t3)
     }
 
-    override val rootParser: Parser<Statement> by assignment or ifStatement
+    val whileStatement by skip(whileToken) and cond and skip(doToken) and
+            separatedTerms(parser(::rootParser), comma) map {
+        Statement.While(it.t1, it.t2)
+    }
+
+    override val rootParser: Parser<Statement> by assignment or ifStatement or whileStatement
 }
