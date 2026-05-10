@@ -8,6 +8,7 @@ sealed class Expr {
     data class Min(val left: Expr, val right: Expr) : Expr()
     data class Mul(val left: Expr, val right: Expr) : Expr()
     data class Div(val left: Expr, val right: Expr) : Expr()
+    data class Call(val name: String, val args: List<Expr>) : Expr()
 
     fun evaluate(itpr: Interpreter): Int {
         return when (this) {
@@ -18,6 +19,7 @@ sealed class Expr {
             is Min -> left.evaluate(itpr) - right.evaluate(itpr)
             is Mul -> left.evaluate(itpr) * right.evaluate(itpr)
             is Div -> left.evaluate(itpr) / right.evaluate(itpr)
+            is Call -> itpr.callFunc(name, args.map { expr -> expr.evaluate(itpr) })
         }
     }
 }

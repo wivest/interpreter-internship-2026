@@ -20,10 +20,12 @@ class Language : Grammar<Statement>() {
 
     val trueToken by literalToken("true")
     val falseToken by literalToken("false")
-    val less by literalToken("<")
-    val greater by literalToken(">")
     val lessEq by literalToken("<=")
     val greaterEq by literalToken(">=")
+    val less by literalToken("<")
+    val greater by literalToken(">")
+    val equal by literalToken("==")
+    val notEqual by literalToken("!=")
 
     val ifToken by literalToken("if")
     val thenToken by literalToken("then")
@@ -32,6 +34,11 @@ class Language : Grammar<Statement>() {
     val whileToken by literalToken("while")
     val doToken by literalToken("do")
 
+    val funToken by literalToken("fun")
+    val lscope by literalToken("{")
+    val rscope by literalToken("}")
+    val ret by literalToken("return")
+
     val digits by regexToken("\\d+")
 
     val identifier by regexToken("\\w+")
@@ -39,6 +46,11 @@ class Language : Grammar<Statement>() {
 
     val num by digits use { text.toInt() }
     val term: Parser<Expr> by num use { Expr.Value(this) } or
+            (identifier and skip(lpar) and
+                    separatedTerms(parser(::expr), comma, true) and
+                    skip(rpar) map {
+                Expr.Call(it.t1.text, it.t2)
+            }) or
             (identifier use { Expr.Var(text) }) or
             (skip(minus) and parser(::term) map { Expr.Neg(it) }) or
             (skip(lpar) and parser(::plusExpr) and skip(rpar))
@@ -57,7 +69,9 @@ class Language : Grammar<Statement>() {
             (expr and skip(less) and expr map { Cond.Less(it.t1, it.t2) }) or
             (expr and skip(greater) and expr map { Cond.Greater(it.t1, it.t2) }) or
             (expr and skip(lessEq) and expr map { Cond.LessEq(it.t1, it.t2) }) or
-            (expr and skip(greaterEq) and expr map { Cond.GreaterEq(it.t1, it.t2) })
+            (expr and skip(greaterEq) and expr map { Cond.GreaterEq(it.t1, it.t2) }) or
+            (expr and skip(equal) and expr map { Cond.Eq(it.t1, it.t2) }) or
+            (expr and skip(notEqual) and expr map { Cond.Neq(it.t1, it.t2) })
 
     val ifStatement by skip(ifToken) and cond and skip(thenToken) and
             separatedTerms(parser(::rootParser), comma) and skip(elseToken) and
@@ -70,5 +84,19 @@ class Language : Grammar<Statement>() {
         Statement.While(it.t1, it.t2)
     }
 
-    override val rootParser: Parser<Statement> by assignment or ifStatement or whileStatement
+    val funcDecl by skip(funToken) and identifier and skip(lpar) and
+            separatedTerms(identifier use { text }, comma, true) and
+            skip(rpar) and skip(lscope) and
+            separatedTerms(parser(::rootParser), comma) and
+            skip(rscope) map {
+        Statement.Func(it.t1.text, it.t2, it.t3)
+    }
+
+    val retStmt by skip(ret) and expr map { Statement.Ret(it) }
+
+    override val rootParser: Parser<Statement> by assignment or
+            ifStatement or
+            whileStatement or
+            funcDecl or
+            retStmt
 }

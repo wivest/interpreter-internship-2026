@@ -6,6 +6,8 @@ sealed class Cond {
     data class Greater(val left: Expr, val right: Expr) : Cond()
     data class LessEq(val left: Expr, val right: Expr) : Cond()
     data class GreaterEq(val left: Expr, val right: Expr) : Cond()
+    data class Eq(val left: Expr, val right: Expr) : Cond()
+    data class Neq(val left: Expr, val right: Expr) : Cond()
 
     fun evaluate(itpr: Interpreter): Boolean {
         return when (this) {
@@ -14,6 +16,8 @@ sealed class Cond {
             is Greater -> left.evaluate(itpr) > right.evaluate(itpr)
             is LessEq -> left.evaluate(itpr) <= right.evaluate(itpr)
             is GreaterEq -> left.evaluate(itpr) >= right.evaluate(itpr)
+            is Eq -> left.evaluate(itpr) == right.evaluate(itpr)
+            is Neq -> left.evaluate(itpr) != right.evaluate(itpr)
         }
     }
 }
